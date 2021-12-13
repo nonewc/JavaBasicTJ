@@ -3,6 +3,10 @@ package j20211213;
 public class Dog extends Animal{
 	
 	
+	public Dog() {
+		//기본 생성자. default constructor
+	}
+	
 	public void sleep() {
 		
 		System.out.println(this.name+" zzz");
