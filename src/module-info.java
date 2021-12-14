@@ -1,2 +1,2 @@
-module javabasicEC {
+module javaStudy {
 }
