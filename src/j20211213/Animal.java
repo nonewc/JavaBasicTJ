@@ -14,7 +14,7 @@ public class Animal {
 //		 Animal cat = new Animal(); // 객체 생성
 //		 cat.setName("body");
 //		 System.out.println(cat.name);
-//		 
+//		 +
 //		 Animal dog = new Animal(); // 객체 생성
 //		 dog.setName("happy");
 //		 System.out.println(dog.name);
