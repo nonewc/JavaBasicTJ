@@ -1,4 +1,4 @@
-package variableExam;
+package operatorExam;
 
 import java.util.Scanner;
 
