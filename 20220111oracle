@@ -1,0 +1,402 @@
+# DECODE
+
+SELECT ename, deptno, DECODE(deptno, 10, 300, 20, 400, 0) as 보너스
+FROM emp;
+
+부서가 10이면 300, 20이면 400, 나머지는 0
+
+# 사원번호 + 사원번호가 짝수인지 홀수인지를 출력 
+
+SELECT empno,
+        DECODE(MOD(empno,2), 1, '홀수', 0, '짝수')
+FROM emp;
+
+# 직책이 salesman이면 보너스 5000 아니면 2000
+
+SELECT  ename as 이름,
+        job as 직책,
+        DECODE(job, 'SALESMAN', 5000, 2000) AS 보너스
+FROM emp;
+
+
+#CASE
+
+보너스 지급을, 월급이 3000불 이상이면 500
+2000불 이상이면 300
+1000불 이상이면 200
+나머지는 모두 0
+
+SELECT  ename as 이름,
+        job as 직책,
+        CASE WHEN sal >= 3000 then 500
+                 WHEN sal >= 2000 then 300
+                 WHEN sal >= 1000 then 200
+                 ELSE 0 
+        END AS 보너스
+        
+FROM emp;
+
+# 보너스, 커미션이 NULL이면 500 아니면 0을 출력
+
+SELECT  ename as 이름,
+        comm as 커미션,
+        CASE WHEN comm IS NULL then 500
+             ELSE 0 
+        END AS 보너스
+        
+FROM emp;
+
+# 직책이 SALESMAN, ANALYST면 500
+	CLERK, MANAGER면 400
+	나머지는 모두 0
+
+SELECT  ename as 이름,
+        job as 직책,
+        CASE WHEN job in ('SALESMAN','ANALYST') then 500
+             WHEN job in ( 'CLERK','MANAGER') then 400
+             ELSE 0 
+        END AS 보너스
+        
+FROM emp;
+
+
+#MAX
+#전체 직원 중 제일 높은 급여
+SELECT  MAX(sal)
+FROM emp;
+
+#직책별 최고급여
+SELECT job, MAX(sal)
+FROM emp
+GROUP BY job;
+
+#직책별 최소 급여를 높은 것부터 출력
+
+SELECT job 직책, 
+        MIN(sal) AS 최저급여
+FROM emp
+GROUP BY job
+ORDER BY 최저급여 DESC;
+
+#직책별 최소 급여를 SALESMAN을 제외하고 높은 것부터 출력
+
+SELECT job 직책, 
+        MIN(sal) AS 최저급여
+FROM emp
+WHERE job != 'SALESMAN'
+GROUP BY job
+ORDER BY 최저급여 DESC;
+
+#NULL을 제외한 커미션의 평균을 출력
+
+#직책별 급여의 합계를 높은것부터 출력
+
+SELECT job as 직책, SUM(sal) as 급여합계
+from emp
+group by job
+order by 급여합계 DESC;
+
+# RANK
+
+직책이 ANALYST, MANAGER인 사원들만 이름 직책 월급을 월급의 순위로 출력
+
+SELECT ename as 이름, 
+         job as 직책,
+         sal as 월급,
+         RANK() over(ORDER BY sal DESC) as 순위
+         
+FROM emp
+WHERE job in ('ANALYST','MANAGER');
+
+직책별로 월급이 높은 순은 순으로 순위를 각각 출력
+
+SELECT ename as 이름, 
+         job as 직책,
+         sal as 월급,
+         RANK() over(PARTITION BY job
+         ORDER BY sal DESC) as 순위
+         
+FROM emp;
+
+# DENSE RANK
+
+SELECT ename as 이름, 
+         job as 직책,
+         sal as 월급,
+         RANK() over(ORDER BY sal DESC) as rank순위,
+         DENSE_RANK() over(ORDER BY sal DESC) as DENSE순위
+         
+FROM emp;
+
+
+# 81년도에 입사한 사원들의 이름 직책 월급 순위
+직업별로 높은 순서
+
+SELECT ename as 이름, 
+         job as 직책,
+         sal as 월급,
+         DENSE_RANK() over(PARTITION BY job
+        ORDER BY sal DESC) as rank순위
+         
+         
+FROM emp
+WHERE TO_CHAR(hiredate,'RRRR') = '1981';
+
+# NTILE 등급
+
+월급을 4등급
+(~25%
+~50%
+~75%
+~100%)
+
+SELECT ename as 이름, 
+         job as 직책,
+         sal as 월급,
+        NTILE(4) OVER (order by sal) 등급
+         
+         
+FROM emp;
+
+# CUME_DIST 비율
+
+SELECT ename as 이름, 
+         job as 직책,
+         sal as 월급,
+         RANK() OVER (order BY sal DESC) 순위,
+         CUME_DIST() OVER (ORDER BY sal DESC) 비율
+         
+         
+FROM emp;
+
+#LISTAGG
+데이터를 가로로 출력
+
+SELECT deptno, 
+    LISTAGG(ename,',') WITHIN GROUP (ORDER BY ename)
+FROM emp
+GROUP BY deptno;
+
+LISTAGG() 함수는 데이터를 가로로 출력하는 함수이다.
+구분자를 설정하여 (, / 등등) 항목을 구분하여 출력한다.
+WITHIN GROUP은 ~내의 라는 의미로 쓰이고
+GROUP BY는 필수다.
+
+직책별 사원의 이름을 가로로 출력 구분은 "||"
+
+SELECT job, 
+    LISTAGG(ename,'||') WITHIN GROUP (ORDER BY ename)
+FROM emp
+GROUP BY job;
+
+
+# 데이터의 전행과 다음행 출력
+SELECT empno, ename, sal,
+        LAG(sal,1) OVER (ORDER BY sal ASC) "전 행",
+        LEAD(sal,1) OVER (ORDER BY sal ASC) "다음 행"
+FROM emp;
+
+#열을 행으로 출력
+
+부서번호, 부서번호별 월급의 합계를 출력
+
+SELECT SUM(DECODE(deptno, 10, sal)) AS "10",
+       SUM(DECODE(deptno, 20, sal)) AS "20",
+       SUM(DECODE(deptno, 30, sal)) AS "30"
+FROM emp;
+
+SELECT *
+    FROM (SELECT deptno, sal
+            FROM emp)
+    PIVOT (SUM(sal) FOR deptno in(10,20,30));
+
+# SUM OVER 누적
+
+
+SELECT ename, sal, SUM(sal) OVER ( //값 누적 지정
+ORDER BY sal ROWS
+BETWEEN UNBOUNDED PRECEDING
+AND CURRENT ROW) 누적값
+//첫 행부터 현재 행 까지의 열의 값의 합계
+
+FROM emp;
+
+
+#직책별 월급을 출력, 첫행의 토탈 월급 출력
+
+SELECT deptno, job, sum(sal)
+    FROM emp
+    GROUP BY CUBE(deptno, job);
+
+#부서번호, 직책, 부서번호별 토탈 급여, 직책별 토탈 급여, 전체 토탈급여까지 출력
+
+SELECT deptno, job, sum(sal)
+    FROM emp
+    GROUP BY GROUPING SETS ((deptno), (job), ());
+	부서번호 직책 천체
+
+    SETS ((deptno), (job))
+	부서번호 직책
+
+    SETS ((deptno, job))
+	부서번호 직책
+
+# 넘버링.
+
+SELECT ROW_NUMBER() OVER
+(ORDER BY EMPNO) 번호,
+empno, ename
+	FROM emp;
+
+출력되는 각 행에 고유한 숫자값을 부여하는 함수이다.
+OVER에 반드시 ORDER BY를 기술해야만 한다.
+
+# 부서번호별로 월급에 대한 순위를 ROW_NUMBER()를 사용하여 구해보자.
+
+SELECT deptno 부서번호,
+       ROW_NUMBER() OVER (PARTITION BY deptno ORDER BY sal DESC) 순위,
+       sal 월급
+    
+FROM emp;
+
+#테이블 조인
+
+# 테이블 2개 조인
+SELECT ename, loc
+	FROM emp, dept;
+	WHERE emp.deptno = dept.deptno;
+
+서로 다른 테이블에 있는 컬럼들을 하나의 결과로 출력하려면 JOIN을 사용해야 한다.
+
+조인을 사용하기 위해서는 조건이 있어야 한다.
+조인 조건이 두개의 테이블을 연결하기 위한 연결고리이다.
+
+# 여러 테이블 조인
+// ORACLE
+SELECT e.ename, e.sal, s.grade
+	FROM emp e, salgrade s
+	WHERE e.sal between s.losal and s.hisal;
+
+SELECT e.ename 사원, e.job 직책, m.ename 관리자, m.job 관리자직책
+	FROM emp e, emp m
+	WHERE e.mgr = m.empno;
+
+// 표준 문법
+SELECT e.ename AS 이름, e.job AS 직책, e.sal AS 월급, d.loc AS 부서위치
+    FROM emp e JOIN dept d
+    ON (e.deptno = d.deptno);
+
+//표준 문법 USING
+//USING에서는 조인 조건 대신에 연결할 때 사용할 컬럼 이름만 기술하면 된다.
+//양쪽 테이블에 모두 존재한다는 의미로 [테이블명.컬럼명] 형식으로 사용하지 않는다.
+SELECT e.ename AS 이름, e.job AS 직책, e.sal AS 월급, d.loc AS 부서위치
+    FROM emp e JOIN dept d
+    USING (deptno);
+
+//표준 문법 NAUTRAL JOIN
+// 조인 조건을 명시적으로 작성하지 않아도 두 테이블에 둘 다 존재하는 동일한 컬럼을
+// 기반으로 암시적으로 조인을 수행한다.
+SELECT e.ename AS 이름, e.job AS 직책, e.sal AS 월급, d.loc AS 부서위치
+    FROM emp e NATURAL JOIN dept d;
+
+// LEFT/RIGHT JOIN
+
+SELECT e.ename AS 이름, e.job AS 직책, e.sal AS 월급, d.loc AS 부서위치
+    FROM emp e RIGHT OUTER JOIN dept d
+    ON (e.deptno = d.deptno);
+    
+emp 와 dept를 조인할 때 오른 쪽 dept 테이블의 데이터는 전부 출력된다.
+   
+SELECT e.ename AS 이름, e.job AS 직책, e.sal AS 월급, d.loc AS 부서위치
+    FROM emp e LEFT OUTER JOIN dept d
+    ON (e.deptno = d.deptno);
+   
+emp 테이블의 데이터는 전부 출력되었고 dept 테이블에서는  40이 존재하여 출력
+
+// 위 아래로 붙이기 UNION
+1. 컬럼의 갯수가 일치해야 한다.
+2. 타입이 동일해야 한다.
+3. ORDER BY 절은 제일 아래쪽 쿼리에만 작성할 수 있다.
+4. 결과로 출력되는 컬럼의 이름은 위쪽 쿼리의 이름으로 출력된다.
+
+SELECT deptno, SUM(sal)
+    FROM emp
+    GROUP BY deptno
+UNION ALL
+SELECT TO_NUMBER(null) as deptno, sum(sal) // 열 2개를 만들기 위해
+    FROM emp;
+
+TO_NUMBER(null) 위쪽의 쿼리 유형이 숫자이기 때문에 숫자형으로 동일하게 맞춰주었다.
+하지만 null로 사용할때는 자료형에 상관없이 쓸 수 있다.
+
+# 교집합 출력
+
+SELECT ename, sal, job, deptno
+    FROM emp
+    WHERE deptno in (10,20)
+
+INTERSECT
+
+SELECT ename, sal, job, deptno
+    FROM emp
+    WHERE deptno in (20,30);
+
+위쪽 쿼리인 부서번호 10, 20 사원들에 대한 데이터와
+아래쪽 쿼리 부서 번호 20,30 사원들에 대한 데이터 간의 교집합인
+20번 데이터를 출력
+
+#단일행 서브쿼리
+서브쿼리에서 메인쿼리로 "하나"의 값을 반환
+= >= <>
+
+MARTIN 보다 더 많은 월급을 받는 사람들의 이름과 월급을 출력
+
+SELECT ename, sal, job, deptno
+    FROM emp
+    WHERE sal > (SELECT sal
+                   FROM emp
+                   WHERE ename = 'MARTIN');
+        
+SCOTT과 같은 월급을 받는 사원들의 이름과 월급을 출력하시오.
+
+SELECT ename, sal, job, deptno
+    FROM emp
+    WHERE sal = (SELECT sal
+                   FROM emp
+                   WHERE job = 'SALESMAN')
+    AND ename != 'SCOTT';
+        
+
+#다중행 서브쿼리
+직책이 SALESMAN인 사람들과 같은 월급을 받는 사람들의 이름과 월급을 출력
+    서브쿼리에서 메인쿼리로 여러개의 값이 반환
+IN, NOT IN
+
+ANY
+
+>ALL 가장 큰 값보다 크다
+>ANY 가장 작은값보다 크다.
+<ALL 가장 작은값보다 작다
+<ANY 가장 큰 값보다 작다
+
+SELECT ename, sal, job, deptno
+    FROM emp
+    WHERE sal IN (SELECT sal
+                   FROM emp
+                   WHERE job = 'SALESMAN');
+    
+
+매니저가 있는 사원들의
+이름과 월급과 직책을 출력
+
+SELECT ename, sal, job
+    FROM emp
+    WHERE ename IN (SELECT ename
+                   FROM emp
+                   WHERE mgr IS NOT NULL)
+    
+        
+
+
+
+
